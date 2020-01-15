@@ -49,6 +49,12 @@
     <ClInclude Include="GPU\GPUWildcard.h">
       <Filter>GPU</Filter>
     </ClInclude>
+    <ClInclude Include="hash\sph_groestl.h">
+      <Filter>Hash</Filter>
+    </ClInclude>
+    <ClInclude Include="hash\groestld.h">
+      <Filter>Hash</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GPU\GPUGenerate.cpp">
@@ -81,6 +87,12 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Bech32.cpp" />
     <ClCompile Include="Wildcard.cpp" />
+    <ClCompile Include="hash\groestl.cpp">
+      <Filter>Hash</Filter>
+    </ClCompile>
+    <ClCompile Include="hash\groestld.cpp">
+      <Filter>Hash</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="GPU\GPUEngine.cu">

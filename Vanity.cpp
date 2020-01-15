@@ -351,22 +351,22 @@ bool VanitySearch::initPrefix(std::string &prefix,PREFIX_ITEM *it) {
   
 
   switch (prefix.data()[0]) {
-  case '1':
+  case 'F':
     aType = P2PKH;
     break;
   case '3':
     aType = P2SH;
     break;
-  case 'b':
-  case 'B':
+  case 'g':
+  case 'G':
     std::transform(prefix.begin(), prefix.end(), prefix.begin(), ::tolower);
-    if(strncmp(prefix.c_str(), "bc1q", 4) == 0)
+    if(strncmp(prefix.c_str(), "grs1q", 4) == 0)
       aType = BECH32;
     break;
   }
 
   if (aType==-1) {
-    printf("Ignoring prefix \"%s\" (must start with 1 or 3 or bc1q)\n", prefix.c_str());
+    printf("Ignoring prefix \"%s\" (must start with F or 3 or grs1q)\n", prefix.c_str());
     return false;
   }
 
@@ -382,7 +382,7 @@ bool VanitySearch::initPrefix(std::string &prefix,PREFIX_ITEM *it) {
     uint8_t witprog[40];
     size_t witprog_len;
     int witver;
-    const char* hrp = "bc";
+    const char* hrp = "grs";
 
     int ret = segwit_addr_decode(&witver, witprog, &witprog_len, hrp, prefix.c_str());
 

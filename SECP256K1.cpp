@@ -77,12 +77,12 @@ void CheckAddress(Secp256K1 *T,std::string address,std::string privKeyStr) {
   Point pub = T->ComputePublicKey(&privKey);
 
   switch (address.data()[0]) {
-  case '1': 
+  case 'F': 
     type = P2PKH; break;
   case '3': 
     type = P2SH; break;
-  case 'b': 
-  case 'B':
+  case 'g': 
+  case 'G':
     type = BECH32; break;
   default:
     printf("Failed ! \n%s Address format not supported\n", address.c_str());
@@ -658,10 +658,10 @@ std::vector<std::string> Secp256K1::GetAddress(int type, bool compressed, unsign
   switch (type) {
 
   case P2PKH:
-    add1[0] = 0x00;
-    add2[0] = 0x00;
-    add3[0] = 0x00;
-    add4[0] = 0x00;
+    add1[0] = 0x24;
+    add2[0] = 0x24;
+    add3[0] = 0x24;
+    add4[0] = 0x24;
     break;
 
   case P2SH:
@@ -674,13 +674,13 @@ std::vector<std::string> Secp256K1::GetAddress(int type, bool compressed, unsign
   case BECH32:
   {
     char output[128];
-    segwit_addr_encode(output, "bc", 0, h1, 20);
+    segwit_addr_encode(output, "grs", 0, h1, 20);
     ret.push_back(std::string(output));
-    segwit_addr_encode(output, "bc", 0, h2, 20);
+    segwit_addr_encode(output, "grs", 0, h2, 20);
     ret.push_back(std::string(output));
-    segwit_addr_encode(output, "bc", 0, h3, 20);
+    segwit_addr_encode(output, "grs", 0, h3, 20);
     ret.push_back(std::string(output));
-    segwit_addr_encode(output, "bc", 0, h4, 20);
+    segwit_addr_encode(output, "grs", 0, h4, 20);
     ret.push_back(std::string(output));
     return ret;
   }
@@ -713,7 +713,7 @@ std::string Secp256K1::GetAddress(int type, bool compressed,unsigned char *hash1
   switch(type) {
 
     case P2PKH:
-      address[0] = 0x00;
+      address[0] = 0x24;
       break;
 
     case P2SH:
@@ -723,7 +723,7 @@ std::string Secp256K1::GetAddress(int type, bool compressed,unsigned char *hash1
     case BECH32:
     {
       char output[128];
-      segwit_addr_encode(output, "bc", 0, hash160, 20);
+      segwit_addr_encode(output, "grs", 0, hash160, 20);
       return std::string(output);
     }
     break;
@@ -743,7 +743,7 @@ std::string Secp256K1::GetAddress(int type, bool compressed, Point &pubKey) {
   switch (type) {
 
   case P2PKH:
-    address[0] = 0x00;
+    address[0] = 0x24;
     break;
 
   case BECH32:
@@ -754,7 +754,7 @@ std::string Secp256K1::GetAddress(int type, bool compressed, Point &pubKey) {
     char output[128];
     uint8_t h160[20];
     GetHash160(type, compressed, pubKey, h160);
-    segwit_addr_encode(output,"bc",0,h160,20);
+    segwit_addr_encode(output,"grs",0,h160,20);
     return std::string(output);
   }
   break;

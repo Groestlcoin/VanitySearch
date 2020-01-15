@@ -17,6 +17,7 @@
 
 #include "SECP256k1.h"
 #include "hash/sha256.h"
+#include "hash/groestld.h"
 #include "hash/ripemd160.h"
 #include "Base58.h"
 #include "Bech32.h"
@@ -229,7 +230,7 @@ Int Secp256K1::DecodePrivateKey(char *key,bool *compressed) {
       
     // Compute checksum
     unsigned char c[4];
-    sha256_checksum(privKey.data(), 33, c);
+    groestld_checksum(privKey.data(), 33, c);
     
     if( c[0]!=privKey[33] || c[1]!=privKey[34] || 
         c[2]!=privKey[35] || c[3]!=privKey[36] ) {
@@ -255,7 +256,7 @@ Int Secp256K1::DecodePrivateKey(char *key,bool *compressed) {
       
     // Compute checksum
     unsigned char c[4];
-    sha256_checksum(privKey.data(), 34, c);
+    groestld_checksum(privKey.data(), 34, c);
 
     if( c[0]!=privKey[34] || c[1]!=privKey[35] || 
         c[2]!=privKey[36] || c[3]!=privKey[37] ) {
@@ -611,13 +612,13 @@ std::string Secp256K1::GetPrivAddress(bool compressed,Int &privKey) {
 	
     // compressed suffix
     address[33] = 1;
-    sha256_checksum(address, 34, address + 34);
+    groestld_checksum(address, 34, address + 34);
     return EncodeBase58(address,address + 38);
 	  
   } else {
 
     // Compute checksum
-    sha256_checksum(address, 33, address + 33);
+    groestld_checksum(address, 33, address + 33);
     return EncodeBase58(address,address + 37);
 
   }
@@ -729,7 +730,7 @@ std::string Secp256K1::GetAddress(int type, bool compressed,unsigned char *hash1
     break;
   }
   memcpy(address + 1, hash160,20);
-  sha256_checksum(address,21,address+21);
+  groestld_checksum(address,21,address+21);
 
   // Base58
   return EncodeBase58(address, address + 25);
@@ -768,7 +769,7 @@ std::string Secp256K1::GetAddress(int type, bool compressed, Point &pubKey) {
   }
 
   GetHash160(type,compressed,pubKey, address + 1);
-  sha256_checksum(address, 21, address + 21);
+  groestld_checksum(address, 21, address + 21);
 
   // Base58
   return EncodeBase58(address, address + 25);
@@ -785,7 +786,7 @@ bool Secp256K1::CheckPudAddress(std::string address) {
 
   // Check checksum
   unsigned char chk[4];
-  sha256_checksum(pubKey.data(), 21, chk);
+  groestld_checksum(pubKey.data(), 21, chk);
 
   return  (pubKey[21] == chk[0]) &&
           (pubKey[22] == chk[1]) &&

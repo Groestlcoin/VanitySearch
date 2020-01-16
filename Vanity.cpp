@@ -235,19 +235,19 @@ VanitySearch::VanitySearch(Secp256K1 *secp, vector<std::string> &inputPrefixes,s
     // Wild card search
     switch (inputPrefixes[0].data()[0]) {
 
-    case '1':
+    case 'F':
       searchType = P2PKH;
       break;
     case '3':
       searchType = P2SH;
       break;
-    case 'b':
-    case 'B':
+    case 'g':
+    case 'G':
       searchType = BECH32;
       break;
 
     default:
-      printf("Invalid start character 1,3 or b, expected");
+      printf("Invalid start character F, 3 or g, expected");
       exit(1);
 
     }
@@ -360,7 +360,7 @@ bool VanitySearch::initPrefix(std::string &prefix,PREFIX_ITEM *it) {
   case 'g':
   case 'G':
     std::transform(prefix.begin(), prefix.end(), prefix.begin(), ::tolower);
-    if(strncmp(prefix.c_str(), "grs1q", 4) == 0)
+    if(strncmp(prefix.c_str(), "grs1q", 5) == 0)
       aType = BECH32;
     break;
   }
@@ -401,20 +401,20 @@ bool VanitySearch::initPrefix(std::string &prefix,PREFIX_ITEM *it) {
 
     }
 
-    if (prefix.length() < 5) {
-      printf("Ignoring prefix \"%s\" (too short, length<5 )\n", prefix.c_str());
+    if (prefix.length() < 6) {
+      printf("Ignoring prefix \"%s\" (too short, length<6 )\n", prefix.c_str());
       return false;
     }
 
-    if (prefix.length() >= 36) {
-      printf("Ignoring prefix \"%s\" (too long, length>36 )\n", prefix.c_str());
+    if (prefix.length() >= 37) {
+      printf("Ignoring prefix \"%s\" (too long, length>37 )\n", prefix.c_str());
       return false;
     }
 
     uint8_t data[64];
     memset(data,0,64);
     size_t data_length;
-    if(!bech32_decode_nocheck(data,&data_length,prefix.c_str()+4)) {
+    if(!bech32_decode_nocheck(data,&data_length,prefix.c_str()+5)) {
       printf("Ignoring prefix \"%s\" (Only \"023456789acdefghjklmnpqrstuvwxyz\" allowed)\n", prefix.c_str());
       return false;
     }

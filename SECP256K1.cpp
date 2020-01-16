@@ -691,12 +691,18 @@ std::vector<std::string> Secp256K1::GetAddress(int type, bool compressed, unsign
   memcpy(add2 + 1, h2, 20);
   memcpy(add3 + 1, h3, 20);
   memcpy(add4 + 1, h4, 20);
+#if HAS_GROESTL_SSE
   CHECKSUM(b1, add1);
   CHECKSUM(b2, add2);
   CHECKSUM(b3, add3);
   CHECKSUM(b4, add4);
-  sha256sse_checksum(b1,b2,b3,b4,add1 + 21, add2 + 21, add3 + 21, add4 + 21);
-
+  groestldsse_checksum(b1,b2,b3,b4,add1 + 21, add2 + 21, add3 + 21, add4 + 21);
+#else #don't use SSE if not available
+  groestld_checksum(add1, 21, add1 + 21);
+  groestld_checksum(add2, 21, add2 + 21);
+  groestld_checksum(add3, 21, add3 + 21);
+  groestld_checksum(add4, 21, add4 + 21);
+#endif
   // Base58
   ret.push_back(EncodeBase58(add1, add1 + 25));
   ret.push_back(EncodeBase58(add2, add2 + 25));

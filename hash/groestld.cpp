@@ -69,3 +69,14 @@ void groestld_checksum(uint8_t *input, int length, uint8_t *checksum) {
 	WRITEBE32(checksum, s[0]);
 
 }
+#if HAS_GROESTL_SSE
+/* this is not yet an SSE function */
+void groestldsse_checksum(uint32_t *i0, uint32_t *i1, uint32_t *i2, uint32_t *i3,
+	uint8_t *d0, uint8_t *d1, uint8_t *d2, uint8_t *d3) {
+	// this function does not work, there is some BE/LE issue probably
+	groestld_checksum((uint8_t*)i0, 21, d0);
+	groestld_checksum((uint8_t*)i1, 21, d1);
+	groestld_checksum((uint8_t*)i2, 21, d2);
+	groestld_checksum((uint8_t*)i3, 21, d3);
+}
+#endif

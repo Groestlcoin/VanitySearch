@@ -812,10 +812,12 @@ bool VanitySearch::checkPrivKey(string addr, Int &key, int32_t incr, int endomor
     }
     string chkAddr = secp->GetAddress(searchType, mode, p);
     if (chkAddr != addr) {
-      printf("\nWarning, wrong private key generated !\n");
-      printf("  Addr :%s\n", addr.c_str());
-      printf("  Check:%s\n", chkAddr.c_str());
-      printf("  Endo:%d incr:%d comp:%d\n", endomorphism, incr, mode);
+      #ifdef SHOW_WARNINGS
+      //printf("\nWarning, wrong private key generated !\n");
+      //printf("  Addr :%s\n", addr.c_str());
+      //printf("  Check:%s\n", chkAddr.c_str());
+      //printf("  Endo:%d incr:%d comp:%d\n", endomorphism, incr, mode);
+      #endif
       return false;
     }
 

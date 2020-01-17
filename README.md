@@ -52,6 +52,16 @@ VanitySearch [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]
  -sp startPubKey: Start the search with a pubKey (for private key splitting)
  -r rekey: Rekey interval in MegaKey, default is disabled
 ```
+# Wildcards
+
+Supported wildcard characters include:
+`?` - any one character
+`*` - any number of characters
+
+Considerations:
+1. a pattern such as `Ftest` is the same as `Ftest*`
+2. `F?test` will generate no matches, but `F?test*` will. If `?` is used, then other wildcards must be used to match a 35 character address (for legacy addresses).
+3. `F?t*` is the same as`F?t???????????????????????????????`
 
 Example (Windows, Intel(R) Core(TM) i9-9980HK 2.4GHz 16 multithreaded cores, GeForce RTX 2080):
 ```

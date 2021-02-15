@@ -78,11 +78,11 @@ void CheckAddress(Secp256K1 *T,std::string address,std::string privKeyStr) {
   Point pub = T->ComputePublicKey(&privKey);
 
   switch (address.data()[0]) {
-  case 'F': 
+  case 'F':
     type = P2PKH; break;
-  case '3': 
+  case '3':
     type = P2SH; break;
-  case 'g': 
+  case 'g':
   case 'G':
     type = BECH32; break;
   default:
@@ -147,7 +147,7 @@ void Secp256K1::Check() {
   CheckAddress(this,"32VWMo4rqHmZYet6N7DyCV1Zspjo4vir5z","L2yC1wKdg7coNuYYBChmzc1tqctBDeeS4DoVfyjGrqu3mNptEQaJ");
   CheckAddress(this,"32nPGTadp7JyxLT8qY5a7C7KfiQZJMN2WH","L1wNJpKJz3bb9iR3eysqL4Ln4HSkJ1u9mfadKeTnExo2ZRbFbfan");
   CheckAddress(this,"grs1qvgl6498fputu2lg7kxtjyxzfwd03k2fma6u4gh","L29cJmtn3Y2Pg6D3SXw8vjVaDeuYkAAcyUGsh15XXLFEaoEKFQsT");
-  
+
   // FVfRwczho5cuTiyYsNqiADLi51qg46d2vi
   pub.x.SetBase16(/*04*/"75249c39f38baa6bf20ab472191292349426dc3652382cdc45f65695946653dc");
   pub.y.SetBase16("978b2659122fe1df1be132167f27b74e5d4a2f3ecbbbd0b3fbcc2f4983518674");
@@ -188,7 +188,7 @@ Point Secp256K1::ComputePublicKey(Int *privKey) {
   for(; i < 32; i++) {
     b = privKey->GetByte(i);
     if(b)
-      Q = Add(Q, GTable[256 * i + (b-1)]);
+      Q = Add2(Q, GTable[256 * i + (b-1)]);
   }
 
   Q.Reduce();
@@ -226,16 +226,16 @@ Int Secp256K1::DecodePrivateKey(char *key,bool *compressed) {
     int count = 31;
     for(int i = 1; i < 33; i++)
       ret.SetByte(count--,privKey[i]);
-      
+
     // Compute checksum
     unsigned char c[4];
     groestld_checksum(privKey.data(), 33, c);
-    
-    if( c[0]!=privKey[33] || c[1]!=privKey[34] || 
+
+    if( c[0]!=privKey[33] || c[1]!=privKey[34] ||
         c[2]!=privKey[35] || c[3]!=privKey[36] ) {
-      printf("Warning, Invalid private key checksum !\n");			
+      printf("Warning, Invalid private key checksum !\n");
     }
-    
+
     *compressed = false;
     return ret;
 
@@ -252,14 +252,14 @@ Int Secp256K1::DecodePrivateKey(char *key,bool *compressed) {
     int count = 31;
     for(int i = 1; i < 33; i++)
       ret.SetByte(count--,privKey[i]);
-      
+
     // Compute checksum
     unsigned char c[4];
     groestld_checksum(privKey.data(), 34, c);
 
-    if( c[0]!=privKey[34] || c[1]!=privKey[35] || 
+    if( c[0]!=privKey[34] || c[1]!=privKey[35] ||
         c[2]!=privKey[36] || c[3]!=privKey[37] ) {
-      printf("Warning, Invalid private key checksum !\n");			
+      printf("Warning, Invalid private key checksum !\n");
     }
 
     *compressed = true;
@@ -606,14 +606,14 @@ std::string Secp256K1::GetPrivAddress(bool compressed,Int &privKey) {
 
   address[0] = 0x80; // Mainnet
   privKey.Get32Bytes(address + 1);
-  
+
   if( compressed ) {
-	
+
     // compressed suffix
     address[33] = 1;
     groestld_checksum(address, 34, address + 34);
     return EncodeBase58(address,address + 38);
-	  
+
   } else {
 
     // Compute checksum
@@ -821,7 +821,51 @@ Point Secp256K1::AddDirect(Point &p1,Point &p2) {
 
   r.y.ModSub(&p2.x,&r.x);
   r.y.ModMulK1(&_s);
-  r.y.ModSub(&p2.y);       // ry = - p2.y - s*(ret.x-p2.x);  
+  r.y.ModSub(&p2.y);       // ry = - p2.y - s*(ret.x-p2.x);
+
+  return r;
+
+}
+
+Point Secp256K1::Add2(Point &p1, Point &p2) {
+
+  // P2.z = 1
+
+  Int u;
+  Int v;
+  Int u1;
+  Int v1;
+  Int vs2;
+  Int vs3;
+  Int us2;
+  Int a;
+  Int us2w;
+  Int vs2v2;
+  Int vs3u2;
+  Int _2vs2v2;
+  Point r;
+
+  u1.ModMulK1(&p2.y, &p1.z);
+  v1.ModMulK1(&p2.x, &p1.z);
+  u.ModSub(&u1, &p1.y);
+  v.ModSub(&v1, &p1.x);
+  us2.ModSquareK1(&u);
+  vs2.ModSquareK1(&v);
+  vs3.ModMulK1(&vs2, &v);
+  us2w.ModMulK1(&us2, &p1.z);
+  vs2v2.ModMulK1(&vs2, &p1.x);
+  _2vs2v2.ModAdd(&vs2v2, &vs2v2);
+  a.ModSub(&us2w, &vs3);
+  a.ModSub(&_2vs2v2);
+
+  r.x.ModMulK1(&v, &a);
+
+  vs3u2.ModMulK1(&vs3, &p1.y);
+  r.y.ModSub(&vs2v2, &a);
+  r.y.ModMulK1(&r.y, &u);
+  r.y.ModSub(&vs3u2);
+
+  r.z.ModMulK1(&vs3, &p1.z);
 
   return r;
 
@@ -921,7 +965,7 @@ Point Secp256K1::DoubleDirect(Point &p) {
 
   _p.ModMulK1(&a,&_s);
   r.y.ModAdd(&_p,&p.y);
-  r.y.ModNeg();           // ry = neg(p.y + s*(ret.x+neg(p.x)));  
+  r.y.ModNeg();           // ry = neg(p.y + s*(ret.x+neg(p.x)));
 
   return r;
 }

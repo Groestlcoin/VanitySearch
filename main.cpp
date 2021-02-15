@@ -25,7 +25,7 @@
 #include "hash/sha512.h"
 #include "hash/sha256.h"
 
-#define RELEASE "1.16"
+#define RELEASE "1.19"
 
 using namespace std;
 
@@ -34,7 +34,7 @@ using namespace std;
 void printUsage() {
 
   printf("VanitySeacrh [-check] [-v] [-u] [-b] [-c] [-gpu] [-stop] [-i inputfile]\n");
-  printf("             [-gpuId gpuId1[,gpuId2,...]] [-g gridSize1[,gridSize2,...]]\n");
+  printf("             [-gpuId gpuId1[,gpuId2,...]] [-g g1x,g1y,[,g2x,g2y,...]]\n");
   printf("             [-o outputfile] [-m maxFound] [-ps seed] [-s seed] [-t nbThread]\n");
   printf("             [-nosse] [-r rekey] [-check] [-kp] [-sp startPubKey]\n");
   printf("             [-rp privkey partialkeyfile] [prefix]\n\n");
@@ -48,7 +48,7 @@ void printUsage() {
   printf(" -i inputfile: Get list of prefixes to search from specified file\n");
   printf(" -o outputfile: Output results to the specified file\n");
   printf(" -gpu gpuId1,gpuId2,...: List of GPU(s) to use, default is 0\n");
-  printf(" -g gridSize1x,gridSize1y,gridSize1x,gridSize1y, ...: Specify GPU(s) kernel gridsize, default is 8*(MP number),128\n");
+  printf(" -g g1x,g1y,g2x,g2y, ...: Specify GPU(s) kernel gridsize, default is 8*(MP number),128\n");
   printf(" -m: Specify maximun number of prefixes found by each kernel call\n");
   printf(" -s seed: Specify a seed for the base key, default is random\n");
   printf(" -ps seed: Specify a seed concatened with a crypto secure random seed\n");
@@ -57,6 +57,7 @@ void printUsage() {
   printf(" -l: List cuda enabled devices\n");
   printf(" -check: Check CPU and GPU kernel vs CPU\n");
   printf(" -cp privKey: Compute public key (privKey in hex hormat)\n");
+  printf(" -ca pubKey: Compute address (pubKey in hex hormat)\n");
   printf(" -kp: Generate key pair\n");
   printf(" -rp privkey partialkeyfile: Reconstruct final private key(s) from partial key(s) info.\n");
   printf(" -sp startPubKey: Start the search with a pubKey (for private key splitting)\n");
@@ -117,7 +118,7 @@ void getInts(string name,vector<int> &tokens, const string &text, char sep) {
 // ------------------------------------------------------------------------------------------
 
 void parseFile(string fileName, vector<string> &lines) {
-  
+
   // Get file size
   FILE *fp = fopen(fileName.c_str(), "rb");
   if (fp == NULL) {
@@ -266,9 +267,9 @@ void reconstructAdd(Secp256K1 *secp, string fileName, string outputFile, string 
     string addr;
     string partialPrivAddr;
 
-    if (lines[i].substr(0, 10) == "Pub Addr: ") {
+    if (lines[i].substr(0, 12) == "PubAddress: ") {
 
-      addr = lines[i].substr(10);
+      addr = lines[i].substr(12);
 
       switch (addr.data()[0]) {
       case 'F':
@@ -285,7 +286,7 @@ void reconstructAdd(Secp256K1 *secp, string fileName, string outputFile, string 
       }
 
     } else {
-      printf("Invalid partialkey info file at line %d (\"Pub Addr: \" expected)\n",i);
+      printf("Invalid partialkey info file at line %d (\"PubAddress: \" expected)\n",i);
       exit(-1);
     }
 
@@ -352,7 +353,7 @@ void reconstructAdd(Secp256K1 *secp, string fileName, string outputFile, string 
       CHECK_ADDR();
 
       if (!found) {
-        printf("Unable to reconstruct final key from partialkey line %d\n Addr: %s\n PartKey: %s\n", 
+        printf("Unable to reconstruct final key from partialkey line %d\n Addr: %s\n PartKey: %s\n",
           i, addr.c_str(),partialPrivAddr.c_str());
       }
 
@@ -368,7 +369,7 @@ int main(int argc, char* argv[]) {
 
   // Global Init
   Timer::Init();
-  rseed((unsigned long)time(NULL));
+  rseed(Timer::getSeed32());
 
   // Init SecpK1
   Secp256K1 *secp = new Secp256K1();
@@ -376,7 +377,7 @@ int main(int argc, char* argv[]) {
 
   // Browse arguments
   if (argc < 2) {
-    printf("Error: Not enough argument (use -h for help)");
+    printf("Error: No arguments (use -h for help)\n");
     exit(-1);
   }
 
@@ -452,16 +453,31 @@ int main(int argc, char* argv[]) {
       string pub = string(argv[a]);
       startPuKey = secp->ParsePublicKeyHex(pub, startPubKeyCompressed);
       a++;
+    } else if(strcmp(argv[a],"-ca") == 0) {
+      a++;
+      string pub = string(argv[a]);
+      bool isComp;
+      Point p = secp->ParsePublicKeyHex(pub,isComp);
+      printf("Addr (P2PKH): %s\n",secp->GetAddress(P2PKH,isComp,p).c_str());
+      printf("Addr (P2SH): %s\n",secp->GetAddress(P2SH,isComp,p).c_str());
+      printf("Addr (BECH32): %s\n",secp->GetAddress(BECH32,isComp,p).c_str());
+      exit(0);
     } else if (strcmp(argv[a], "-cp") == 0) {
       a++;
       string priv = string(argv[a]);
       Int k;
-      k.SetBase16(argv[a]);
+      bool isComp = true;
+      if(priv[0]=='5' || priv[0] == 'K' || priv[0] == 'L') {
+        k = secp->DecodePrivateKey((char *)priv.c_str(),&isComp);
+      } else {
+        k.SetBase16(argv[a]);
+      }
       Point p = secp->ComputePublicKey(&k);
-      printf("PubKey: %s\n",secp->GetPublicKeyHex(true,p).c_str());
-      printf("Addr (P2PKH): %s\n", secp->GetAddress(P2PKH,true,p).c_str());
-      printf("Addr (P2SH): %s\n", secp->GetAddress(P2SH, true,p).c_str());
-      printf("Addr (BECH32): %s\n", secp->GetAddress(BECH32, true,p).c_str());
+      printf("PrivAddr: p2pkh:%s\n",secp->GetPrivAddress(isComp,k).c_str());
+      printf("PubKey: %s\n",secp->GetPublicKeyHex(isComp,p).c_str());
+      printf("Addr (P2PKH): %s\n", secp->GetAddress(P2PKH,isComp,p).c_str());
+      printf("Addr (P2SH): %s\n", secp->GetAddress(P2SH,isComp,p).c_str());
+      printf("Addr (BECH32): %s\n", secp->GetAddress(BECH32,isComp,p).c_str());
       exit(0);
     } else if (strcmp(argv[a], "-rp") == 0) {
       a++;
